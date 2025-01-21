@@ -130,6 +130,8 @@ unique_seed = base_seed + run
 
 # In[9]:
 import random
+import numpy as np
+import torch
 def set_seed(seed):
     """Set seed for reproducibility."""
     random.seed(seed)
@@ -257,7 +259,6 @@ def stat2str(t):
 
 
 from os import path
-import numpy as np
 
 if retrain == False and path.exists(out_file + ".pt") and path.exists(out_file + ".mat"):
     vae.load_state_dict(torch.load("%s.pt" % (out_file),map_location=torch.device(device)))
