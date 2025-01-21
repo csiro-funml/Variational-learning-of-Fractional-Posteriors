@@ -5,6 +5,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:1
 #SBATCH --time 04:00:00
+#SBATCH --mem=8GB
 #SBATCH --error=/scratch3/bon136/kmac/results/slurm-%A_%a.err
 #SBATCH --output=/scratch3/bon136/kmac/results/slurm-%A_%a.out
 
