@@ -50,7 +50,7 @@ learning_weight_decay = 1e-5 # input to Adam optimiser
 ### These are not so key
 gpudevice = "cuda:3"   # **commandline configurable**
 dovalidate = True     # **commandline configurable**
-
+run = 0
 
 # ## System setup
 # - to run from command line, convert this notebook with jupyter nbconvert filename.ipynb --to python
@@ -113,6 +113,7 @@ if not is_interactive():
     argparser.add_argument("--device", type=str)
     argparser.add_argument("--skiptrain", action="store_true")
     argparser.add_argument("--skipvalidate", action="store_true")
+    argparser.add_argument("--run", type=int)
     args = argparser.parse_args()
 
     gamma = args.gamma
@@ -121,12 +122,29 @@ if not is_interactive():
     gpudevice = args.device
     retrain = False if args.skiptrain else True # this would be the default
     dovalidate = False if args.skipvalidate else True # this would be the default
-
+    run = args.run
 
 # In[5]:
+base_seed = 42
+unique_seed = base_seed + run
 
+# In[9]:
+import random
+def set_seed(seed):
+    """Set seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
-out_file = ("./results/%s-mnist-q-%d-e-%d-d-%d-g-%0.2f-n-%d-b-%d") % (theoryclass, q, width_enc, width_dec, gamma, nMCMCtrain[0], batch_size)
+# Set the seed for reproducibility
+set_seed(unique_seed)
+
+out_file = ("./results/%s-mnist-q-%d-e-%d-d-%d-g-%0.2f-n-%d-b-%d-s-%d") % (theoryclass, q, width_enc, width_dec, gamma, nMCMCtrain[0], batch_size, unique_seed)
 
 
 # In[6]:
@@ -202,9 +220,6 @@ vae = VAE(e, g, gamma).to(device)
 
 
 # ## Train the Generator and Approximate Posterior
-
-# In[9]:
-
 
 def singleEpoch(model, dataloader, nMCMC, optimizer = None):
     num_ex = 0
