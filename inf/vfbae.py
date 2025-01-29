@@ -69,7 +69,7 @@ class VFAE(nn.Module):
 
         if self.gamma == 1.0: # conventional ELBO (gamma=1.0) or beta-VAE (gamma > 1.0)
             sZd = torch.sum(log_px) / Ns;    
-            sZc = torch.sum(log_qzx - log_pz) * (gamma / Ns);
+            sZc = torch.sum(log_qzx - log_pz) * (self.gamma / Ns);
         else:
             ngma = 1.0 - self.gamma;
             rgma = ngma / self.gamma;
