@@ -1,0 +1,4 @@
+python vae-expt.py --device cuda:0 --data FMNIST --epochs 500 --theoryclass VFAE --generate 10000 --gamma 10.0 --run 0
+python vae-expt.py --device cuda:0 --data FMNIST --epochs 500 --theoryclass VFAE --generate 10000 --gamma 1000.0 --run 0
+python vae-expt.py --device cuda:0 --data FMNIST --epochs 500 --theoryclass VFAE --generate 10000 --gamma 100000.0  --run 0
+
