@@ -67,7 +67,7 @@ class VFAE(nn.Module):
         log_pz = self.log_prob_pz(z).view(Ns, -1)     # prior
         log_qzx = self.log_prob_qzx_eps(eps, logvar).view(Ns, -1) # fractional posterior
 
-        if self.gamma == 1.0: # conventional ELBO (gamma=1.0) or beta-VAE (gamma > 1.0)
+        if self.gamma >= 1.0: # conventional ELBO (gamma=1.0) or beta-VAE (gamma > 1.0)
             sZd = torch.sum(log_px) / Ns;    
             sZc = torch.sum(log_qzx - log_pz) * (self.gamma / Ns);
         else:
