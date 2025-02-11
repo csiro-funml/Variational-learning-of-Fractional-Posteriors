@@ -1,6 +1,6 @@
 """
 Variational Fractional Autoencoder (VFAE)
-by Kian Ming A. Chai (cha847@csiro.au)
+by Kian Ming A. Chai
 based heavily on the code by Ruthotto and Haber (2021) at https://github.com/EmoryMLIP/DeepGenerativeModelingIntro
 """
 
@@ -102,7 +102,10 @@ class VFAE(nn.Module):
         if n > 0:
             shapen = (n,) + logvar.shape;
             std = torch.exp(logvar)
-            eps = torch.randn(shapen, device=std.get_device())
+            if std.get_device() == -1:
+                eps = torch.randn(shapen)
+            else:
+                eps = torch.randn(shapen, device=std.get_device())
             return std.unsqueeze(0).expand(shapen) * eps + mu.unsqueeze(0).expand(shapen), eps
         else:
             return mu, torch.zeros(logvar.shape) # Only one sample, so we don't expand dimensions for now
@@ -143,8 +146,8 @@ class VFAE(nn.Module):
         :param z: latent sample
         :return: log(p(z), log prior, which is multivariate normal
         """
-        n = z.shape[-1]  # cha847@csiro.au: there was a bug in the original code with the Ruthotto and Haber paper
-        pz = - 0.5 * torch.norm(z, dim=-1) ** 2  - (n/2)*np.log(2*np.pi)
+        n = z.shape[-1]  # there was a bug in the original code with the Ruthotto and Haber paper
+        pz = -0.5 * torch.norm(z, dim=-1) ** 2  - (n/2)*np.log(2*np.pi)
         return pz
 
     def log_prob_pzx(self,z,x,gz):
@@ -243,9 +246,8 @@ class VFBAESI(VFAESI):
         log_rzx = self.log_prob_qzx_eps(reps, rlogvar).view(Ns, -1) # Bayes posterior 
 
         # select the implicits for cross evaluation
-        qXmu, qXlogvar = self.sample_q_for_r(Nv, Nu, N, qmu, qlogvar)
-        log_qXzx = self.log_prob_qzx_rz(rz.view(Nz,Nu,N,-1), Nv, qXmu, qXlogvar).view(Ns, -1) # Bayes-Fractional cross
-             
+        log_qXzx = self.log_prob_qzx_rz(rz, qmu, qlogvar, Nz, Nv, Nu, N).view(Ns, -1) # Bayes-Fractional cross
+        
         ngma = 1.0 - self.gamma;
         rgma = ngma / self.gamma;
         sZd = torch.sum(log_px) / Ns # data term
@@ -254,6 +256,11 @@ class VFBAESI(VFAESI):
         
         return (-sZd+sKL+sZc)/N, (-sZd/N).item(), (sKL/N).item(), (sZc/N).item(), gz.detach(), rmu.detach()
     
+    def log_prob_qzx_rz(self, rz, qmu, qlogvar, Nz, Nv, Nu, N):
+        # select the implicits for cross evaluation
+        qXmu, qXlogvar = self.sample_q_for_r(Nv, Nu, N, qmu, qlogvar)
+        return self.__log_prob_qzx_rz(rz.view(Nz,Nu,N,-1), qXmu, qXlogvar)
+
     def sample_q_for_r(self, Nv, Nu, N, qmu, qlogvar):
         # - Choose Nv out of Nr < Nu-1, so that we can exclude "self" in the selection
         # - can be replaced by randint if you are confident of probability of repeats is not zero in the model
@@ -266,8 +273,8 @@ class VFBAESI(VFAESI):
         qXlogvar = qlogvar[sel,:].reshape(Nv, Nu, N, -1)
         
         return qXmu, qXlogvar
-
-    def log_prob_qzx_rz(self, z, Nv, mu, logvar):            
+    
+    def __log_prob_qzx_rz(self, z, mu, logvar):            
         Nv = mu.shape[0]        
         z = z.unsqueeze(0)
         mu = mu.unsqueeze(1)
@@ -275,6 +282,19 @@ class VFBAESI(VFAESI):
         
         logp = -0.5/Nv * torch.sum( (z - mu) ** 2 / torch.exp(logvar) - logvar, dim=(0,-1)) - (z.shape[-1]/2)*np.log(2*np.pi)
 
+        return logp;
+
+ 
+# Fractional and Bayes posterior together, slighly less work
+class VFBAESI2(VFBAESI):
+    def __init__(self,e, g, gamma):
+        super().__init__(e, g, gamma)
+
+    #@override
+    def log_prob_qzx_rz(self, z, mu, logvar, *_):
+        # z is from the Bayes posterior
+        n = z.shape[-1]        
+        logp = -0.5 * torch.sum( (z - mu) ** 2 / torch.exp(logvar) - logvar, dim=(-1)) - (n/2)*np.log(2*np.pi)
         return logp;
 
  
