@@ -13,23 +13,32 @@ import torch.nn.functional as F
 import torch.distributions as Dist
 
 class Generator(nn.Module):
-    def __init__(self, s, c, w, q):
+    def __init__(self, s, c, d, w, q):
         """
         Initialize generator
         :param s: image size (multiples of 4)
         :param c: number of channels
+        :param d: number of convolutional layers (2 or 3)
         :param w: number of channels on the finest level
         :param q: latent space dimension
         """
         super(Generator, self).__init__()
-        if s % 4 !=0:
-            raise Exception("Image size must be multiple of 4")
-        b = s // 4; # basic image size
+        scale = 2 ** d
+        if s % scale !=0:
+            raise Exception("Image size must be multiple of ", scale)
+        b = s // scale; # basic image size
         
         self.b = b
         self.c = c
+        self.d = d
         self.w = w
-        self.fc = nn.Linear(q, w * 2 * b * b)
+        if d == 2:
+            self.fc = nn.Linear(q, w * 2 * b * b)           
+        else:
+            self.fc = nn.Linear(q, w * 4 * b * b)
+            self.conv3 = nn.ConvTranspose2d(w * 4, w * 2, kernel_size=4, stride=2, padding=1)
+            self.bn3 = nn.BatchNorm2d(4*w)
+        
         self.conv2 = nn.ConvTranspose2d(w * 2, w, kernel_size=4, stride=2, padding=1)
         self.conv1 = nn.ConvTranspose2d(w, c, kernel_size=4, stride=2, padding=1)
 
@@ -42,36 +51,53 @@ class Generator(nn.Module):
         :return: g(z)
         """
         gz = self.fc(z)
-        gz = gz.view(gz.size(0), self.w * 2, self.b, self.b)
+
+        if self.d == 2:
+            gz = gz.view(gz.size(0), self.w * 2, self.b, self.b)
+        else:
+            gz = gz.view(gz.size(0), self.w * 4, self.b, self.b)
+            gz = self.bn3(gz)
+            gz = F.relu(gz)
+            gz = self.conv3(gz)
+            
         gz = self.bn2(gz)
         gz = F.relu(gz)
         gz = self.conv2(gz)
+        
         gz = self.bn1(gz)
-
         gz = F.relu(gz)
         gz = torch.sigmoid(self.conv1(gz))
         return gz
 
 class Encoder(nn.Module):
-    def __init__(self, s, c, w, q, naux=0):
+    def __init__(self, s, c, d, w, q, naux=0):
         """
         Initialize the encoder for the VAE
         :param s: image size (multiples of 4)
         :param c: number of channels
+        :param d: number of convolutional layers (2 or 3)
         :param w: number of channels on finest level
         :param q: latent space dimension
         """
         super(Encoder, self).__init__()
-        if s % 4 !=0:
-            raise Exception("Image size must be multiple of 4")
-        b = s // 4; # basic image size
+        scale = 2 ** d
+        if s % scale !=0:
+            raise Exception("Image size must be multiple of ", scale)
+        b = s // scale; # basic image size
         
         self.b = b
         self.c = c
+        self.d = d
         self.conv1 = nn.Conv2d(c, w, kernel_size=4, stride=2, padding=1)
         self.conv2 = nn.Conv2d(w, w * 2, kernel_size=4, stride=2, padding=1)
-        self.fc_mu = nn.Linear(w * 2 * b * b + naux, q)
-        self.fc_logvar = nn.Linear(w * 2 * b * b + naux, q)
+
+        if d==2:
+            self.fc_mu = nn.Linear(w * 2 * b * b + naux, q)
+            self.fc_logvar = nn.Linear(w * 2 * b * b + naux, q)
+        else:
+            self.conv3 = nn.Conv2d(w * 2, w * 4, kernel_size=4, stride=2, padding=1)
+            self.fc_mu = nn.Linear(w * 4 * b * b + naux, q)
+            self.fc_logvar = nn.Linear(w * 4 * b * b + naux, q)
 
     def forward(self, x_aux):
         """
@@ -82,6 +108,8 @@ class Encoder(nn.Module):
         
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
+        if self.d == 3:
+            x = F.relu(self.conv3(x))
         x = x.view(x.size(0), -1)
 
         # handle implicits
@@ -144,11 +172,12 @@ class Implicit(nn.Module):
 
 
 class EncoderSI(nn.Module):
-    def __init__(self, s, c, w,q, implicit_dim, implicit_hidden):
+    def __init__(self, s, c, d, w, q, implicit_dim, implicit_hidden):
         """
         Initialize the encoder for the VAE
         :param s: image size (multiples of 4)
         :param c: number of channels
+        :param d: number of convolutional layers (2 or 3)
         :param w: number of channels on finest level
         :param q: latent space dimension
         """
@@ -159,7 +188,7 @@ class EncoderSI(nn.Module):
         # Set up the implicit distribution
         self.nMCMC = 0;
         self.implicit = Implicit(Nfeat, implicit_dim, implicit_hidden)
-        self.encoder = Encoder(w, q, implicit_hidden[-1])
+        self.encoder = Encoder(s, c, d, w, q, implicit_hidden[-1])
 
     @classmethod
     def make(cls, nMCMC, implicit, encoder):
@@ -197,16 +226,17 @@ class EncoderSI(nn.Module):
 
 # Fractional posterior + Bayes posterior
 class EncoderSIB(EncoderSI):
-    def __init__(self, s, c, w, q, implicit_dim, implicit_hidden):
+    def __init__(self, s, c, d, w, q, implicit_dim, implicit_hidden):
         """
         Initialize the encoder for the VAE
         :param s: image size (multiples of 4)
         :param c: number of channels
+        :param d: number of convolutional layers (2 or 3)
         :param w: number of channels on finest level
         :param q: latent space dimension
         """
-        super().__init__(w, q, implicit_dim, implicit_hidden)
-        self.encoderb = Encoder(s, c, w, q, implicit_hidden[-1]) # extra Bayes posterior
+        super().__init__(s, c, d, w, q, implicit_dim, implicit_hidden)
+        self.encoderb = Encoder(s, c, d, w, q, implicit_hidden[-1]) # extra Bayes posterior
 
     def fractional(self):
         """
