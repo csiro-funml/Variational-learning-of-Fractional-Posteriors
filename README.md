@@ -8,7 +8,7 @@ The experiments are in two places:
 1. [Gaussian mixture models](notebooks/gmm.ipynb)
    - This is self-contained.
    - You can probably run it on your laptop. GPU is not required.
-   - You can only use it within a Jupyter Notebook.
+   - You can only use it as a Jupyter Notebook.
 
 2. [Variational autoencoders for MNIST and Fashion-MNIST](notebooks/vae-expt.ipynb)
    - This depends on the [inference code](inf/vfbae.py) and the [neural network architectures](nnarch/vaenn.py).
