@@ -12,11 +12,11 @@ The experiments are in two places:
 
 2. [Variational autoencoders for MNIST and Fashion-MNIST](notebooks/vae-expt.ipynb)
    - This depends on the [inference code](inf/vfbae.py) and the [neural network architectures](nnarch/vaenn.py).
-   - You will need at least a NVIDIA T4 to run. Possible on free accounts on
+   - You will need at least an NVIDIA T4 to run. Possible on free accounts on
      * [Amazon SageMaker Studio Lab](https://studiolab.sagemaker.aws/);
      * [Google Colab](https://colab.research.google.com/); and
      * [Kaggle](https:/kaggle.com).
-   - Some results in the paper can be obtained within single time-limited sessions. Some results require multiple such sessions. Saving and loading of partial results are supported in the code.
+   - Some results in the paper can be obtained within single time-limited sessions. Some results require multiple such sessions. Saving and loading of partial results are supported in the code. Multi-GPUs are supported via DataParallel, which is useful when run within Kaggle.
    - For FID scoring, we use the version by [Seitzer](https://github.com/mseitzer/pytorch-fid).
    - Instead of Jupyter Notebook, the code can be converted to pure Python and run from the command line. See the [experiments directory](expt/) for how this is done.
    - There is limited testing for CIFAR10, which requires some changes to execute on SageMaker Studio Lab.
