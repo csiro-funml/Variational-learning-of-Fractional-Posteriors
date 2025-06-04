@@ -26,8 +26,8 @@ The experiments are in two places
      * Number of Monte Carlo samples for validation reduced to 128
      * Numer of epoches reduced to 300
      * Results using $\mathcal{L}_\gamma$, our primary bound:
-       - $\gamma=1$  (ELBO): train objecture = 1,229; validation objective = 1,772; FID = 141
+       - $\gamma=1$  (ELBO): train objecture = 1,229; validation objective = 1,172; FID = 141
        - $\gamma=10^{-5}$ (posterior very close to prior): train objective = 1,238; validation objective = 1,184; FID = 135
      * These results are not fantastic, but they demonstrate that small $\gamma$ is better.
-     * We have not done extensive study on this. The 32-dimensional latent space is just to show that the conclusions also hold beyond the 2 and 4 dimensions documented in the paper.
+     * The study is not extensive. In particular, the 32-dimensional latent space is just to show that the conclusions also hold beyond the 2 and 4 dimensions documented in the paper.
      
