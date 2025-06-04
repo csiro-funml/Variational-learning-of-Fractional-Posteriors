@@ -16,10 +16,10 @@ The experiments are in two places
      * [Amazon SageMaker Studio Lab](https://studiolab.sagemaker.aws/)
      * [Google Colab](https://colab.research.google.com/)
      * [Kaggle](https:/kaggle.com)
-   - Some results in the paper can be obtained within a single time-limited sessions. Some results requires multiple such sessions. Saving and loading of partial results are supported in the code.
+   - Some results in the paper can be obtained within single time-limited sessions. Some results require multiple such sessions. Saving and loading of partial results are supported in the code.
    - For FID scoring, we use the version by [Seitzer](https://github.com/mseitzer/pytorch-fid)
    - Instead of Jupyter Notebook, the code can be converted to pure Python and run from the command line. See the [experiments directory](expt/) for how this is done.
-   - There is limited testing for CIFAR10, which requires some changes to execude on SageMaker Studio Lab.
+   - There is limited testing for CIFAR10, which requires some changes to execute on SageMaker Studio Lab.
      * One additional CNN layer (total 3) each for encoder and decoder
      * 32-dimensional latent space
      * Number of Monte Carlo samples for training reduced to 16
@@ -28,5 +28,6 @@ The experiments are in two places
      * Results using $\mathcal{L}_\gamma$, our primary bound:
        - $\gamma=1$  (ELBO): train objecture = 1,229; validation objective = 1,772; FID = 141
        - $\gamma=10^{-5}$ (posterior very close to prior): train objective = 1,238; validation objective = 1,184; FID = 135
-       These results are not fantastic, but they demonstrate that small $\gamma$ is better.
-       
+     * These results are not fantastic, but they demonstrate that small $\gamma$ is better.
+     * We have not done extensive study on this. The 32-dimensional latent space is just to show that the conclusions also hold beyond the 2 and 4 dimensions documented in the paper.
+     
