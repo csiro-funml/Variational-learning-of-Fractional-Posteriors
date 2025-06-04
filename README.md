@@ -3,21 +3,21 @@
 This repository accompanies the paper
 <ins>Kian Ming A. Chai and Edwin V. Bonilla. Variational Learning of Fractional Posteriors. ICML 2025.</ins>
 
-The experiments are in two places
+The experiments are in two places:
 
 1. [Gaussian mixture models](notebooks/gmm.ipynb)
-   - This is self-contained
-   - You can probably run it on your laptop. No GPU required
-   - You can only use it within a Jupyter Notebook
+   - This is self-contained.
+   - You can probably run it on your laptop. GPU is not required.
+   - You can only use it within a Jupyter Notebook.
 
 2. [Variational autoencoders for MNIST and Fashion-MNIST](notebooks/vae-expt.ipynb)
-   - This depends on the [inference code](inf/vfbae.py) and the [neural network architectures](nnarch/vaenn.py)
+   - This depends on the [inference code](inf/vfbae.py) and the [neural network architectures](nnarch/vaenn.py).
    - You will need at least a NVIDIA T4 to run. Possible on free accounts on
-     * [Amazon SageMaker Studio Lab](https://studiolab.sagemaker.aws/)
-     * [Google Colab](https://colab.research.google.com/)
-     * [Kaggle](https:/kaggle.com)
+     * [Amazon SageMaker Studio Lab](https://studiolab.sagemaker.aws/);
+     * [Google Colab](https://colab.research.google.com/); and
+     * [Kaggle](https:/kaggle.com).
    - Some results in the paper can be obtained within single time-limited sessions. Some results require multiple such sessions. Saving and loading of partial results are supported in the code.
-   - For FID scoring, we use the version by [Seitzer](https://github.com/mseitzer/pytorch-fid)
+   - For FID scoring, we use the version by [Seitzer](https://github.com/mseitzer/pytorch-fid).
    - Instead of Jupyter Notebook, the code can be converted to pure Python and run from the command line. See the [experiments directory](expt/) for how this is done.
    - There is limited testing for CIFAR10, which requires some changes to execute on SageMaker Studio Lab.
      * One additional CNN layer (total 3) each for encoder and decoder
