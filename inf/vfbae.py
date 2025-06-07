@@ -1,6 +1,5 @@
 """
 Variational Fractional Autoencoder (VFAE)
-by Kian Ming A. Chai
 based heavily on the code by Ruthotto and Haber (2021) at https://github.com/EmoryMLIP/DeepGenerativeModelingIntro
 """
 
@@ -10,15 +9,17 @@ import numpy as np
 import torch.nn.functional as F
 import torch.distributions.continuous_bernoulli as LH
 
+# this is for EBLO, beta-VAE and $\mathcal{L}_{\gamma}$
 class VFAE(nn.Module):
     """
-    Dimensions order: MCMC samples, Data-batch-size, per-data dimensions (1x28x28)
+    Dimensions order for data in this class: MCMC samples, Data-batch-size, per-data dimensions (1x28x28)
     """
     def __init__(self,e, g, gamma):
         """
         Initialize VFAE
         :param e: encoder network e(z|x), provides parameters of approximate posteriors
         :param g: generator g(z), provides samples in data space
+        :param gamma: 1.0 (ELBO); >1.0 (beta-VAE); <1.0 (fractional posterior). See ELBO_at for how this is used.
         """
         super().__init__()
         self.e = e
@@ -162,6 +163,7 @@ class VFAE(nn.Module):
 
 
 # specialisation for semi-implicit, more work
+# this is for $\mathcal{L}^h_{\gamma}$
 class VFAESI(VFAE):
     def __init__(self,e, g, gamma):
         super().__init__(e, g, gamma)
@@ -189,7 +191,9 @@ class VFAESI(VFAE):
     
 
 
-# Fractional and Bayes posterior together, even more work!
+# Fractional and Bayes posterior together, with semi-implicit
+# this is for $\mathcal{L}^{bh}_{\gamma}-alt$
+# You should probably use the VFBAESI2 below instead
 class VFBAESI(VFAESI):
     def __init__(self,e, g, gamma):
         super().__init__(e, g, gamma)
@@ -285,7 +289,8 @@ class VFBAESI(VFAESI):
         return logp;
 
  
-# Fractional and Bayes posterior together, slighly less work
+# Fractional and Bayes posterior together, with semi-implicits
+# this is for $\mathcal{L}^{bh}_{\gamma}$
 class VFBAESI2(VFBAESI):
     def __init__(self,e, g, gamma):
         super().__init__(e, g, gamma)
