@@ -1,9 +1,11 @@
 """
 Encoder and Decoder for VAE experiments
-by Kian Ming A. Chai
 Copied from the code by Ruthotto and Haber (2021) at https://github.com/EmoryMLIP/DeepGenerativeModelingIntro
 - Modified for different sizes and channels
-Except for EncoderSI which is then a modification of Encoder
+- EncoderSI which is then a modification of Encoder for semi-implicit distribution
+- EncoderSIB is semi-implicit with coupled fractional and Bayes posterior
+The experiments for MNIST and Fashion-MNIST uses d=2 number of convolutional layers.
+The experiment for CIFAR10 (not in paper) use d=3. We probably need better neural network models to have a better absolute results for CIFAR10; but the current set up already gives relative results from which conclusions can be drawn.
 """
 
 import copy
@@ -123,7 +125,7 @@ class Encoder(nn.Module):
         logvar = self.fc_logvar(x)
         return mu, logvar
 
-# Semi-implicit distribution
+# The implicit distribution of the Semi-implicit distribution
 # See Yin and Zhou, ICML 2018.
 class Implicit(nn.Module):
     """
@@ -132,6 +134,11 @@ class Implicit(nn.Module):
     If nMCMC=1, then it does one sample, but does not collapse the sample output dimension (so that you know there is one sample)
     """
     def __init__(self, in_dim, eps_dim, hid_dim):
+        """
+        param in_dim: input dimensions
+        param eps_dim: implicit/driving-noise dimensions
+        param hid_dim: hidden layer dimensions
+        """
         super(Implicit, self).__init__()
 
         self.eps_dim = eps_dim        
@@ -171,6 +178,7 @@ class Implicit(nn.Module):
         return h
 
 
+# Encoder using semi-implicits for fractional posterior
 class EncoderSI(nn.Module):
     def __init__(self, s, c, d, w, q, implicit_dim, implicit_hidden):
         """
@@ -180,15 +188,16 @@ class EncoderSI(nn.Module):
         :param d: number of convolutional layers (2 or 3)
         :param w: number of channels on finest level
         :param q: latent space dimension
+        :param impliicit_dim, implicit_hidden: see class Implicit
         """
         super().__init__()
 
         Nfeat = c * s * s; # C * H * W
         
-        # Set up the implicit distribution
+        # Set up the semi-implicit distribution
         self.nMCMC = 0;
-        self.implicit = Implicit(Nfeat, implicit_dim, implicit_hidden)
-        self.encoder = Encoder(s, c, d, w, q, implicit_hidden[-1])
+        self.implicit = Implicit(Nfeat, implicit_dim, implicit_hidden) # the implicit part
+        self.encoder = Encoder(s, c, d, w, q, implicit_hidden[-1])     # the explicit part
 
     @classmethod
     def make(cls, nMCMC, implicit, encoder):
@@ -224,7 +233,7 @@ class EncoderSI(nn.Module):
         return qz, h
 
 
-# Fractional posterior + Bayes posterior
+# Encoder using semi-implicit for both Fractional posterior + Bayes posterior
 class EncoderSIB(EncoderSI):
     def __init__(self, s, c, d, w, q, implicit_dim, implicit_hidden):
         """
@@ -234,6 +243,7 @@ class EncoderSIB(EncoderSI):
         :param d: number of convolutional layers (2 or 3)
         :param w: number of channels on finest level
         :param q: latent space dimension
+        :param impliicit_dim, implicit_hidden: see class Implicit
         """
         super().__init__(s, c, d, w, q, implicit_dim, implicit_hidden)
         self.encoderb = Encoder(s, c, d, w, q, implicit_hidden[-1]) # extra Bayes posterior
