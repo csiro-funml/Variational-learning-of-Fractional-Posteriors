@@ -2,7 +2,7 @@
 
 This repository accompanies the paper
 [Kian Ming A. Chai and Edwin V. Bonilla. Variational Learning of Fractional Posteriors. ICML 2025.](https://proceedings.mlr.press/v267/chai25a.html)
-An [updated version](Variational_Learning_of_Fractional_Posteriors-v202602.pdf) is also placed here.
+An [updated version](Variational_Learning_of_Fractional_Posteriors-v202602.pdf) is also placed here and at [arXiv:2603.27488](https://arxiv.org/abs/2603.27488).
 
 The experiments are in two places:
 
